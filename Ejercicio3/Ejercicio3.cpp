@@ -2,13 +2,33 @@
 #include <cassert>
 using namespace std;
 
-template <class T>
 struct Lista
 {
 public:
-    T dato;
-    Lista *izq;
-    Lista *der;
+    int dato;
+    Lista *sig;
+    bool operator< (Lista comp) { return this->dato < comp.dato; }
+    bool operator<= (Lista comp) { return this->dato <= comp.dato; }
+    bool operator> (Lista comp) { return this->dato > comp.dato; }
+    bool operator>= (Lista comp) { return this->dato >= comp.dato; }
+    bool operator== (Lista comp) { return this->dato == comp.dato; }
+
+    void Insertar(int valor, Lista* &lista){
+        if (!lista){
+            lista = new Lista();
+            lista->dato = valor;
+            lista->sig = NULL;
+        }
+        else {
+            Lista* aux = lista;
+            while(aux){
+                aux = aux->sig;
+            }
+            aux = new Lista();
+            aux->dato = valor;
+            aux->sig = NULL;
+        }
+    }
 };
 
 template <class T>
@@ -82,12 +102,19 @@ class Heap
         T pop() {
             assert(!esVacio());
             T aux = array[0];
-            array[0] = array[ultimoLibre-1];
-            ultimoLibre--;
+            if(array[0]->sig){
+                array[0] = array[0]->sig;
+                undir(0);
+            }
+            else {
+                array[0] = array[ultimoLibre-1];
+                ultimoLibre--;
             if (ultimoLibre!=0)
                 undir(0);
+            }
             return aux;
         }
+
 
         // pre: no esta vacio
         // retorna el mayor elemento y NO lo saca del heap
@@ -95,14 +122,34 @@ class Heap
             assert(!esVacio());
             return array[0];
         }
+
+        T pos(int i) {
+            assert(!esVacio());
+            return array[i];
+        }
 };
 
 int main(){
-    int cantListas;
+    int cantListas; //Cantidad de listas
+    int maxDeLista; //Maximo de una lista
+    int valor;
     cin >> cantListas;
+    Heap<Lista*> *heap = new Heap<Lista*>(cantListas); 
     for(int i=0; i < cantListas; i++){
-        Lista<int> *io = new Lista<int>();
+        Lista *lista = new Lista();
+        lista = NULL;
+        cin >> maxDeLista;
+        for(int j=0; j < maxDeLista; j++){
+            cin >> valor;
+            lista->Insertar(valor, lista);
+        }
+        heap->insertar(lista);
     }
-    //Heap<int> *heap = Heap(cantListas);
+    for(int i=0; i<cantListas; i++){
+        cout << heap->pos(i)->dato << endl;
+    }
+    //while(!heap->esVacio()){
+    //    cout << heap->pop()->dato << endl;
+    //}
     return 0;
 }
