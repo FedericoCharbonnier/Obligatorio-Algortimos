@@ -1,149 +1,108 @@
 #include <iostream>
+#include <cassert>
 using namespace std;
-#include <assert.h>
 
 template <class T>
-struct AVL
+struct Lista
 {
 public:
     T dato;
-    int bal;
-    AVL *izq;
-    AVL *der;
-    int cant; //si es 0 no esta repetido
+    Lista *izq;
+    Lista *der;
 };
 
-bool vario_h = false;
-
-void InsertarRecursivo(AVL<int> *&pa, const int &x)
+template <class T>
+class Heap
 {
-    AVL<int> *p1;
-    AVL<int> *p2;
-    if (pa == NULL)
-    {
-        pa = new AVL<int>();
-        pa->dato = x;
-        pa->bal = 0;
-        pa->izq = pa->der = NULL;
-        vario_h = true;
-        pa->cant = 0;
-    }
-    else if (pa->dato > x)
-    {
-        InsertarRecursivo(pa->izq, x);
-        if (vario_h)
-        {
-            switch (pa->bal)
-            {
-            case 1:
-                pa->bal = 0;
-                vario_h = false;
-                break;
-            case 0:
-                pa->bal = -1;
-                break;
-            case -1:
-                p1 = pa->izq;
-                if (p1->bal == -1)
-                {
-                    pa->izq = p1->der;
-                    p1->der = pa;
-                    pa->bal = 0;
-                    pa = p1;
+    private:
+        T * array;
+        int ultimoLibre;
+        int capacidad;
+
+        // pre: no llamar en root
+        // retorna la posicion del padre del elemento que se encuentra en i
+        int padre(int i){ return (i - 1) / 2;}
+        // retorna el indice del hijo izq
+        int izq(int i){ return (2 * i + 1); }
+        // retorna el indice del hijo der
+        int der(int i){ return (2 * i + 2); }
+
+        void undir(int i) {
+            if (izq(i)<ultimoLibre){
+                if (der(i)<ultimoLibre){
+                    if (array[izq(i)]>array[der(i)]){
+                        if (array[i]>array[der(i)]){
+                            cambiarPos(i,der(i));
+                            undir(der(i));
+                        }
+                    }
                 }
-                else
-                {
-                    p2 = p1->der;
-                    p1->der = p2->izq;
-                    p2->izq = p1;
-                    pa->izq = p2->der;
-                    p2->der = pa;
-                    pa->bal = p2->bal == -1 ? 1 : 0;
-                    p1->bal = p2->bal == 1 ? -1 : 0;
-                    pa = p2;
+                if (array[i]>array[izq(i)]){
+                    cambiarPos(i,izq(i));
+                    undir(izq(i));
                 }
-                pa->bal = 0;
-                vario_h = false;
             }
         }
-    }
-    else if (pa->dato < x)
-    {
-        InsertarRecursivo(pa->der, x);
-        if (vario_h)
-        {
-            switch (pa->bal)
-            {
-            case -1:
-                pa->bal = 0;
-                vario_h = false;
-                break;
-            case 0:
-                pa->bal = 1;
-                break;
-            case 1:
-                p1 = pa->der;
-                if (p1->bal == 1)
-                {
-                    pa->der = p1->izq;
-                    p1->izq = pa;
-                    pa->bal = 0;
-                    pa = p1;
+
+        void flotar(int i) {
+            if (i!=0){
+                if (array[i]<array[padre(i)]){
+                    cambiarPos(i,padre(i));
+                    flotar(padre(i));
                 }
-                else
-                {
-                    p2 = p1->izq;
-                    p1->izq = p2->der;
-                    p2->der = p1;
-                    pa->der = p2->izq;
-                    p2->izq = pa;
-                    pa->bal = p2->bal == 1 ? -1 : 0;
-                    p1->bal = p2->bal == -1 ? 1 : 0;
-                    pa = p2;
-                }
-                pa->bal = 0;
-                vario_h = false;
             }
         }
-    }
-    else
-    {
-        vario_h = false;
-        pa->cant++;
-    }
-}
 
-void imprimirRecursivo(AVL<int> *raiz)
-{
-    if (!raiz)
-        return;
-    else
-    {
-        imprimirRecursivo(raiz->izq);
-        for (int i = 0; i <= raiz->cant; i++)
-        {
-            cout << raiz->dato << "\n";
+        void cambiarPos(int i, int j) {
+            T aux = array[j];
+            array[j] = array[i];
+            array[i] = aux;
         }
-        imprimirRecursivo(raiz->der);
-    }
-}
 
-int main()
-{
-    AVL<int> *arbol = new AVL<int>();
-    arbol = NULL;
-    int total;
-    int cant;
-    cin >> total;
-    int dato;
-    for (int i = 0; i < total; i++)
-    {
-        cin >> cant;
-        for (int j = 0; j < cant; j++){
-            cin >> dato;
-            InsertarRecursivo(arbol, dato);
+    public:
+        Heap(int capacidad) {
+            array = new T[capacidad];
+            ultimoLibre = 0;
+            this->capacidad = capacidad;
         }
+        ~Heap() { delete[] array; }
+        bool esVacio() { return ultimoLibre == 0; }
+        bool esLleno() { return ultimoLibre == capacidad; }
+
+        // pre: no esta lleno
+        void insertar(T elemento) {
+            assert(!esLleno());
+            array[ultimoLibre] = elemento;
+            ultimoLibre++;
+            flotar(ultimoLibre-1); 
+        }
+
+        // pre: no esta vacio
+        // retorna el mayor elemento y lo saca del heap
+        T pop() {
+            assert(!esVacio());
+            T aux = array[0];
+            array[0] = array[ultimoLibre-1];
+            ultimoLibre--;
+            if (ultimoLibre!=0)
+                undir(0);
+            return aux;
+        }
+
+        // pre: no esta vacio
+        // retorna el mayor elemento y NO lo saca del heap
+        T top() {
+            assert(!esVacio());
+            return array[0];
+        }
+};
+
+int main(){
+    int cantListas;
+    cin >> cantListas;
+    for(int i=0; i < cantListas; i++){
+        Lista<int> *io = new Lista<int>();
     }
-    imprimirRecursivo(arbol);
+    //Heap<int> *heap = Heap(cantListas);
     return 0;
 }
