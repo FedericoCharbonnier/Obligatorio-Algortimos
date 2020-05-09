@@ -166,7 +166,7 @@ int main()
         Asociacion aux = cola->pop(vectores);
         int array = aux.getArray();
         int index = aux.getIndex();
-        if (index == vecLength[array] - 1)
+        if (index == vecLength[array] - 1) //Estoy al final de una lista
         {
             Asociacion nuevo(INT_MAX, array, index + 1);
             cola->insertar(nuevo);
