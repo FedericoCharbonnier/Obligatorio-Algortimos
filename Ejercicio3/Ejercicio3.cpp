@@ -88,7 +88,7 @@ public:
     }
     // pre: no esta vacio
     // retorna el mayor elemento y lo saca del heap
-    T pop(int **vec)
+    T pop()
     {
         T aux = array[0];
         array[0] = array[ultimoLibre - 1];

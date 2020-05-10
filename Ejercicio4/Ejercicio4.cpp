@@ -2,7 +2,6 @@
 #include <assert.h>
 using namespace std;
 
-
 template <class T>
 class Heap
 {
@@ -75,8 +74,8 @@ public:
     ~Heap() { delete[] array; }
     bool esVacio() { return ultimoLibre == 0; }
     bool esLleno() { return ultimoLibre == capacidad; }
-    int getUltimoLibre() {return ultimoLibre; }
-    void setUltimoLibre(int valor) {this->ultimoLibre = valor; }
+    int getUltimoLibre() { return ultimoLibre; }
+    void setUltimoLibre(int valor) { this->ultimoLibre = valor; }
     // pre: no esta lleno
     void insertar(T elemento)
     {
@@ -89,7 +88,7 @@ public:
     }
     // pre: no esta vacio
     // retorna el mayor elemento y lo saca del heap
-    T pop(int **vec)
+    T pop()
     {
         T aux = array[0];
         array[0] = array[ultimoLibre - 1];
@@ -97,16 +96,6 @@ public:
         if (ultimoLibre != 0)
             hundir(0);
         return aux;
-        /*int array = aux->getArray();
-            int index = aux->getIndex();
-            if (index == vecLength(vec[array])-1){
-                T nuevo(INT_MAX, array, index+1);
-                array[0] = this->insertar(nuevo);
-                ultimoLibre--;
-            } else {
-                T nuevo(vec[array][index], array, index+1);
-                array[0] = this->insertar(nuevo);
-            }*/
     }
     // pre: no esta vacio
     // retorna el mayor elemento y NO lo saca del heap
@@ -122,67 +111,82 @@ class Asociacion
 {
 private:
     int clave; //nivel
-    V dato; //vertice
+    V dato;    //vertice
 public:
     Asociacion() {}
     Asociacion(int unaClave, V unDato) : clave(unaClave), dato(unDato) {}
     int getClave() { return this->clave; };
     V getDato() { return this->dato; };
-    bool operator<(Asociacion comp) { 
-        if (this->getClave() == comp.getClave()){
+    bool operator<(Asociacion comp)
+    {
+        if (this->getClave() == comp.getClave())
+        {
             return this->getDato() < comp.getDato();
-        } 
-        else{
+        }
+        else
+        {
             return this->getClave() < comp.getClave();
         }
     }
 
-    bool operator>(Asociacion comp) { 
-        if (this->getClave() == comp.getClave()){
+    bool operator>(Asociacion comp)
+    {
+        if (this->getClave() == comp.getClave())
+        {
             return this->getDato() > comp.getDato();
-        } 
-        else{
+        }
+        else
+        {
             return this->getClave() > comp.getClave();
         }
     }
 
-    bool operator<=(Asociacion comp) { 
-        if (this->getClave() == comp.getClave()){
+    bool operator<=(Asociacion comp)
+    {
+        if (this->getClave() == comp.getClave())
+        {
             return this->getDato() <= comp.getDato();
-        } 
-        else{
+        }
+        else
+        {
             return this->getClave() <= comp.getClave();
         }
     }
 
-    bool operator>=(Asociacion comp) { 
-        if (this->getClave() == comp.getClave()){
+    bool operator>=(Asociacion comp)
+    {
+        if (this->getClave() == comp.getClave())
+        {
             return this->getDato() >= comp.getDato();
-        } 
-        else{
+        }
+        else
+        {
             return this->getClave() >= comp.getClave();
         }
     }
     bool operator==(Asociacion comp) { return (this->getClave() == comp.getClave()) && (this->getDato() == comp.getDato()); }
 };
 
-
-template <class V>
+/*template <class V>
 struct Lista
 {
 public:
     V dato;
     Lista<V> *sig;
 
-    void Insertar(V valor, Lista<V>* &lista){
-        if (!lista){
+    void Insertar(V valor, Lista<V> *&lista)
+    {
+        if (!lista)
+        {
             lista = new Lista<V>();
             lista->dato = valor;
             lista->sig = NULL;
         }
-        else {
-            Lista<V>* aux = lista;
-            while(aux){
+        else
+        {
+            Lista<V> *aux = lista;
+            while (aux)
+            {
                 aux = aux->sig;
             }
             aux = new Lista<V>();
@@ -190,20 +194,21 @@ public:
             aux->sig = NULL;
         }
     }
-};
-
+};*/
 
 template <class V>
 class Grafo
 {
 private:
     bool **matrizAdy; // matriz de adyacencia, si matrizAdy[i][j] == true entonces hay una arista i->j
-    V *vArrList; // mapeo de indice interno a vertice
-    int max; // max cantidad de vertices
-    int ultimo; // ultimo disponible (indice interno)
-    int cantDeAristas; // cantidad de aristas ingresadas
+    V *vArrList;      // mapeo de indice interno a vertice
+    int *nivel;
+    int max;            // max cantidad de vertices
+    int ultimo;         // ultimo disponible (indice interno)
+    int cantDeAristas;  // cantidad de aristas ingresadas
     int cantDeVertices; // cantidad de vertices ingresados
-    bool* visitados;
+    //bool *visitados;
+    Heap<Asociacion<int>> *heap;
 
 public:
     Grafo(int numeroDeVertices)
@@ -212,9 +217,10 @@ public:
         this->cantDeAristas = 0;
         this->cantDeVertices = 0;
         this->max = numeroDeVertices;
+        this->heap = new Heap<Asociacion<int>>(max);
         this->vArrList = new V[numeroDeVertices];
-        this->matrizAdy = new bool*[numeroDeVertices];
-        this->visitados = new bool[max];
+        this->matrizAdy = new bool *[numeroDeVertices];
+        //this->visitados = new bool[max];
         for (int i = 0; i < this->max; i++)
         {
             matrizAdy[i] = new bool[numeroDeVertices];
@@ -225,6 +231,11 @@ public:
             {
                 matrizAdy[i][j] = false;
             }
+        }
+        this->nivel = new int[max];
+        for (int i = 0; i < this->max; i++)
+        {
+            nivel[i] = 0;
         }
     }
     ~Grafo()
@@ -237,36 +248,39 @@ public:
         delete[] matrizAdy;
     }
 
-    int Pos(V vertice){
-        for(int i=0; i<this->cantDeVertices; i++){
-            if(this->vArrList[i]==vertice){
+    int Pos(V vertice)
+    {
+        for (int i = 0; i < this->cantDeVertices; i++)
+        {
+            if (this->vArrList[i] == vertice)
+            {
                 return i;
             }
         }
         return -1;
     }
 
-    void AniadirVertice(V &newV)
+    void AniadirVertice(V newV)
     {
         assert(this->ultimo < this->max);
-        vArrList[ultimo] = &newV;
+        vArrList[ultimo] = newV;
         ultimo++;
         cantDeVertices++;
     }
-    void AniadirArista(V &origen, V &destino)
+    void AniadirArista(V origen, V destino)
     {
         matrizAdy[this->Pos(origen)][this->Pos(destino)] = true;
         cantDeAristas++;
     }
 
-    void EliminarArista(V &origen, V &destino)
+    void EliminarArista(V origen, V destino)
     {
         matrizAdy[this->Pos(origen)][this->Pos(destino)] = false;
         cantDeAristas--;
     }
 
     // Retorna una lista de V desde las que se puede llegar desde el vertice origen (parametro)
-    Lista<V> Anteriores(V &origen){
+    /*Lista<V> Anteriores(V &origen){
         Lista<V> *ret = new Lista<V>();
         ret = NULL;
         for (int i = 0; i< this->cantDeVertices; i++){
@@ -275,66 +289,80 @@ public:
             }
         }
                 return ret;
-    }
- 
-int * obtenerCantIncidentes(){
-  int *vec = new int[max];
-  for (int j = 0; j < max; j++){
-      int cont = 0;
-      for (int i = 0; i < max; i++)
-      {
-        if (this->matrizAdy[i][j])
+    }*/
+
+    int *obtenerCantIncidentes()
+    {
+        int *vec = new int[max];
+        for (int j = 0; j < max; j++)
         {
-          cont++;
+            int cont = 0;
+            for (int i = 0; i < max; i++)
+            {
+                if (this->matrizAdy[i][j])
+                {
+                    cont++;
+                }
+            }
+            vec[j] = cont;
         }
-      }
-      vec[j] = cont;
+        return vec;
     }
-  return vec;
-}
 
-int obtenerPosSinIncidentes(int *cantIncidentes)
-{
-  for (int i = 0; i < this->max; i++)
-    if (cantIncidentes[i] == 0)
-      return i;
-  return -1;
-}
+    int obtenerPosSinIncidentes(int *cantIncidentes)
+    {
+        for (int i = 0; i < this->max; i++)
+            if (cantIncidentes[i] == 0)
+                return i;
+        return -1;
+    }
 
-void ImprimirOrdenTopologico(){
-  int *cantIncidentes = obtenerCantIncidentes();
-  for(int i=0; i<max; i++){
-    int posSinIncidentes = obtenerPosSinIncidentes(cantIncidentes);
-      cout << vertices[posSinIncidentes] << endl;
-      cantIncidentes[posSinIncidentes] = -1;
-      for (int j = 0; j < max; j++)
-        if(mat[posSinIncidentes][j])
-          cantIncidentes[j]--;
-  }
-}
-
-
+    void ImprimirOrdenTopologico()
+    {
+        int *cantIncidentes = obtenerCantIncidentes();
+        for (int i = 0; i < max; i++)
+        {
+            int posSinIncidentes = obtenerPosSinIncidentes(cantIncidentes);
+            cantIncidentes[posSinIncidentes] = -1;
+            for (int j = 0; j < max; j++)
+            {
+                if (matrizAdy[posSinIncidentes][j])
+                {
+                    cantIncidentes[j]--;
+                    int aux = nivel[posSinIncidentes] + 1;
+                    if (nivel[j] < aux)
+                      nivel[j] = aux;
+                }
+            }
+            Asociacion<int> nuevo(nivel[posSinIncidentes], vArrList[posSinIncidentes]);
+            this->heap->insertar(nuevo);
+        }
+        for (int k = 0; k < this->max; k++)
+        {
+            cout << this->heap->pop().getDato() << endl;
+        }
+    }
 };
 
-
-
-
-int main () 
+int main()
 {
     int cantVertices;
     int cantAristas;
     cin >> cantVertices;
-    Heap<int> *heap = new Heap<int>(cantVertices);
-    Grafo<int> *grafo = new Grafo<int>(cantVertices); 
+    Grafo<int> *grafo = new Grafo<int>(cantVertices);
+    for (int j = 0; j < cantVertices; j++)
+    {
+        grafo->AniadirVertice(j+1);
+    }
     cin >> cantAristas;
-    for(int i=0; i<cantAristas; i++){
+    for (int i = 0; i < cantAristas; i++)
+    {
         int origen;
         int destino;
         cin >> origen;
         cin >> destino;
         grafo->AniadirArista(origen, destino);
     }
-
-    
+    grafo->ImprimirOrdenTopologico();
     return 0;
 }
