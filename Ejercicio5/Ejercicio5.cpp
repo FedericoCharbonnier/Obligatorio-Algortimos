@@ -318,13 +318,8 @@ int main()
 
     
     for(int i=0; i<cantPedidos; i++){
-<<<<<<< HEAD
         int pos = cola->pop().getIndex();
         grafo->imprmirVector(grafo->dijkstra(pos-1), pos);
-=======
-        int pos = cola->pop();
-        grafo->imprmirVector(grafo->dijkstra(pos), pos);
->>>>>>> 48f359296be7ff0e15ccb25f745390c0de16fda2
     }
     
 
