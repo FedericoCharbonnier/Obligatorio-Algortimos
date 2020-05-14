@@ -107,17 +107,13 @@ public:
     }
 };
 
-struct nodo{
-    public:
-    bool existe;
-    int costo;
-};
 
 template <class V>
 class Grafo
 {
 private:
-    nodo **matrizAdy; // matriz de adyacencia, si matrizAdy[i][j] == true entonces hay una arista i->j
+    bool **matrizAdy; // matriz de adyacencia, si matrizAdy[i][j] == true entonces hay una arista i->j
+    int **matrizCosto;
     V *vArrList;      // mapeo de indice interno a vertice
     int max;            // max cantidad de vertices
     int ultimo;         // ultimo disponible (indice interno)
@@ -134,17 +130,20 @@ public:
         this->max = numeroDeVertices;
         //this->heap = new Heap<Asociacion<int>>(max);
         this->vArrList = new V[numeroDeVertices];
-        this->matrizAdy = new nodo*();
+        this->matrizAdy = new bool *[numeroDeVertices];
+        this->matrizCosto = new int *[numeroDeVertices];
+        //this->visitados = new bool[max];
         for (int i = 0; i < this->max; i++)
         {
-            matrizAdy[i] = new nodo();
+            matrizAdy[i] = new bool[numeroDeVertices];
+            matrizCosto[i] = new int[numeroDeVertices];
         }
         for (int i = 0; i < this->max; i++)
         {
             for (int j = 0; j < this->max; j++)
             {
-                matrizAdy[i][j].existe = false;
-                matrizAdy[i][j].costo = INF;
+                matrizAdy[i][j] = false;
+                matrizCosto[i][j] = INF;
             }
         }
     }
@@ -154,8 +153,10 @@ public:
         for (int i = 0; i < this->max; i++)
         {
             delete[] matrizAdy[i];
+            delete[] matrizCosto[i];
         }
         delete[] matrizAdy;
+        delete[] matrizCosto;
     }
 
     int Pos(V vertice)
@@ -178,15 +179,15 @@ public:
     }
     void AniadirArista(V origen, V destino, int costo)
     {
-        matrizAdy[this->Pos(origen)][this->Pos(destino)].existe = true;
-        matrizAdy[this->Pos(origen)][this->Pos(destino)].costo = costo;
+        matrizAdy[this->Pos(origen)][this->Pos(destino)] = true;
+        matrizCosto[this->Pos(origen)][this->Pos(destino)] = costo;
         cantDeAristas++;
     }
 
     void EliminarArista(V origen, V destino)
     {
-        matrizAdy[this->Pos(origen)][this->Pos(destino)].existe = false;
-        matrizAdy[this->Pos(origen)][this->Pos(destino)].costo = INF;
+        matrizAdy[this->Pos(origen)][this->Pos(destino)] = false;
+        matrizCosto[this->Pos(origen)][this->Pos(destino)] = INF;
         cantDeAristas--;
     }
 
@@ -205,10 +206,10 @@ public:
         dist[posO] = 0;
         for (int j = 0; j < max; j++)
         {
-            if (matrizAdy[posO][j].existe)
+            if (matrizAdy[posO][j])
             {
                 ant[j] = posO;
-                dist[j] = matrizAdy[posO][j].costo;
+                dist[j] = matrizCosto[posO][j];
             }
         }
 
@@ -234,9 +235,9 @@ public:
             for (int j = 0; j < max; j++)
             {
                 // Actualizo la distancia y el anterior en caso que un adyacente tenga distancia acumulada mejor a la actual
-                if (!vis[j] && matrizAdy[posMin][j].existe)
+                if (!vis[j] && matrizAdy[posMin][j])
                 {
-                    int nuevoCosto = dist[posMin] + matrizAdy[posMin][j].costo;
+                    int nuevoCosto = dist[posMin] + matrizCosto[posMin][j];
                     if (nuevoCosto < dist[j])
                     {
                         dist[j] = nuevoCosto;
@@ -262,11 +263,6 @@ public:
          }
      }
 
-     void imprimir(){
-         for(int i=0; i<this->cantDeVertices; i++){
-             cout << this->vArrList[i] << endl;
-         }
-     }
 };
 
 int main()
@@ -300,17 +296,14 @@ int main()
         cin >> insertar; 
         cola->insertar(insertar);
     }
+
+    
     for(int i=0; i<cantPedidos; i++){
         int pos = cola->pop();
-        int* vec = grafo->dijkstra(pos);
-        for(int i=0; i<cantVertices; i++){
-             if(i+1==pos || vec[i]==INF){
-                 cout << -1 << endl;
-             }
-             else{
-                cout << vec[i] << endl;
-             }
-         }
+        grafo->imprmirVector(grafo->dijkstra(pos), pos);
     }
+    
+
+    
     return 0;
 }
