@@ -107,19 +107,23 @@ public:
     }
 };
 
+struct nodo{
+    public:
+    bool existe;
+    int costo;
+};
+
 template <class V>
 class Grafo
 {
 private:
-    bool **matrizAdy; // matriz de adyacencia, si matrizAdy[i][j] == true entonces hay una arista i->j
+    nodo **matrizAdy; // matriz de adyacencia, si matrizAdy[i][j] == true entonces hay una arista i->j
     V *vArrList;      // mapeo de indice interno a vertice
-    int *nivel;
     int max;            // max cantidad de vertices
     int ultimo;         // ultimo disponible (indice interno)
     int cantDeAristas;  // cantidad de aristas ingresadas
     int cantDeVertices; // cantidad de vertices ingresados
-    //bool *visitados;
-    Heap<Asociacion<int>> *heap;
+    //Heap<Asociacion<int>> *heap;
 
 public:
     Grafo(int numeroDeVertices)
@@ -128,25 +132,20 @@ public:
         this->cantDeAristas = 0;
         this->cantDeVertices = 0;
         this->max = numeroDeVertices;
-        this->heap = new Heap<Asociacion<int>>(max);
+        //this->heap = new Heap<Asociacion<int>>(max);
         this->vArrList = new V[numeroDeVertices];
-        this->matrizAdy = new bool *[numeroDeVertices];
-        //this->visitados = new bool[max];
+        this->matrizAdy = new nodo*();
         for (int i = 0; i < this->max; i++)
         {
-            matrizAdy[i] = new bool[numeroDeVertices];
+            matrizAdy[i] = new nodo();
         }
         for (int i = 0; i < this->max; i++)
         {
             for (int j = 0; j < this->max; j++)
             {
-                matrizAdy[i][j] = false;
+                matrizAdy[i][j].existe = false;
+                matrizAdy[i][j].costo = INF;
             }
-        }
-        this->nivel = new int[max];
-        for (int i = 0; i < this->max; i++)
-        {
-            nivel[i] = 0;
         }
     }
     ~Grafo()
@@ -173,53 +172,53 @@ public:
 
     void AniadirVertice(V newV)
     {
-        assert(this->ultimo < this->max);
         vArrList[ultimo] = newV;
         ultimo++;
         cantDeVertices++;
     }
-    void AniadirArista(V origen, V destino)
+    void AniadirArista(V origen, V destino, int costo)
     {
-        matrizAdy[this->Pos(origen)][this->Pos(destino)] = true;
+        matrizAdy[this->Pos(origen)][this->Pos(destino)].existe = true;
+        matrizAdy[this->Pos(origen)][this->Pos(destino)].costo = costo;
         cantDeAristas++;
     }
 
     void EliminarArista(V origen, V destino)
     {
-        matrizAdy[this->Pos(origen)][this->Pos(destino)] = false;
+        matrizAdy[this->Pos(origen)][this->Pos(destino)].existe = false;
+        matrizAdy[this->Pos(origen)][this->Pos(destino)].costo = INF;
         cantDeAristas--;
     }
 
-    int dijkstra(int posO, int posD)
+    int* dijkstra(int posO)
     {
         // Creo vectores auxiliares
-        int *dist = new int[tope];
-        int *ant = new int[tope];
-        bool *vis = new bool[tope];
+        int *dist = new int[max];
+        int *ant = new int[max];
+        bool *vis = new bool[max];
 
         // Inicializo los vectores
-        for (int i = 0; i < tope; dist[i] = INF, ant[i] = -1, vis[i] = false; i++)
-            ;
+        for (int i = 0; i < max; dist[i] = INF, ant[i] = -1, vis[i] = false, i++);
 
         // Proceso al origen
         vis[posO] = true;
         dist[posO] = 0;
-        for (int j = 0; j < tope; j++)
+        for (int j = 0; j < max; j++)
         {
-            if (matrizAdy[posO][j]->existe)
+            if (matrizAdy[posO][j].existe)
             {
                 ant[j] = posO;
-                dist[j] = matrizAdy[posO][j]->costo;
+                dist[j] = matrizAdy[posO][j].costo;
             }
         }
 
         // Evalúo a todos los demás vértices
-        for (int k = 1; k < tope; k++)
+        for (int k = 1; k < max; k++)
         {
             // Selecciono el vértice de menor distancia no visitado
             int posMin = -1;
             int min = INF;
-            for (int i = 0; i < tope; i++)
+            for (int i = 0; i < max; i++)
             {
                 if (!vis[i] && dist[i] < min)
                 {
@@ -232,12 +231,12 @@ public:
                 break;
             vis[posMin] = true;
             // Evaluo adyacentes
-            for (int j = 0; j < tope; j++)
+            for (int j = 0; j < max; j++)
             {
                 // Actualizo la distancia y el anterior en caso que un adyacente tenga distancia acumulada mejor a la actual
-                if (!vis[j] && matrizAdy[posMin][j]->existe)
+                if (!vis[j] && matrizAdy[posMin][j].existe)
                 {
-                    int nuevoCosto = dist[posMin] + matrizAdy[posMin][j]->costo;
+                    int nuevoCosto = dist[posMin] + matrizAdy[posMin][j].costo;
                     if (nuevoCosto < dist[j])
                     {
                         dist[j] = nuevoCosto;
@@ -247,12 +246,71 @@ public:
             }
         }
 
-        int ret = dist[posD];
-
-        delete[] dist;
         delete[] ant;
         delete[] vis;
-
-        return ret;
+        return dist;
     }
+
+     void imprmirVector(int* vector, int pos){
+         for(int i=0; i<this->cantDeVertices; i++){
+             if(i+1==pos || vector[i]==INF){
+                 cout << -1 << endl;
+             }
+             else{
+                cout << vector[i] << endl;
+             }
+         }
+     }
+
+     void imprimir(){
+         for(int i=0; i<this->cantDeVertices; i++){
+             cout << this->vArrList[i] << endl;
+         }
+     }
 };
+
+int main()
+{
+    int cantVertices;
+    int cantAristas;
+    int cantPedidos;
+    cin >> cantVertices;
+    Grafo<int>* grafo = new Grafo<int>(cantVertices);
+    for (int j = 0; j < cantVertices; j++)
+    {
+        grafo->AniadirVertice(j+1);
+    }
+    cin >> cantAristas;
+    
+    for (int i = 0; i < cantAristas; i++)
+    {
+        int origen;
+        int destino;
+        int costo;
+        cin >> origen;
+        cin >> destino;
+        cin >> costo;
+        grafo->AniadirArista(origen, destino, costo);
+    }
+    
+    cin >> cantPedidos;
+    Heap<int>* cola = new Heap<int>(cantPedidos); 
+    for(int i=0; i<cantPedidos; i++){
+        int insertar;
+        cin >> insertar; 
+        cola->insertar(insertar);
+    }
+    for(int i=0; i<cantPedidos; i++){
+        int pos = cola->pop();
+        int* vec = grafo->dijkstra(pos);
+        for(int i=0; i<cantVertices; i++){
+             if(i+1==pos || vec[i]==INF){
+                 cout << -1 << endl;
+             }
+             else{
+                cout << vec[i] << endl;
+             }
+         }
+    }
+    return 0;
+}
