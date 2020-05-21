@@ -3,6 +3,41 @@
 using namespace std;
 #define INF 99999
 
+/*class Par
+{
+private:
+    int vertice;
+    int costo;
+
+public:
+    Par() {}
+    Par(int unVertice, int unCosto) : vertice(unVertice), costo(unCosto) {}
+    int getCosto() { return this->costo; };
+    bool getVertice() { return this->vertice; };
+    void setCosto(int unCosto) { this->costo = unCosto; };
+    void setVertice(int unVertice) { this->vertice = unVertice; };
+};*/
+
+class NodoLista
+{
+private:
+    int destino;
+    int costo;
+    NodoLista* sig;
+public:
+    
+    NodoLista() {}
+    NodoLista(int d, int c) : destino(d), costo(c), sig(NULL) {}
+    int getDestino() { return this->destino; };
+    int getCosto() { return this->costo; };
+    NodoLista* getSig() {return this->sig;};
+    void insertarOrdenado(NodoLista* &l, int v , int c){
+            NodoLista* nuevo = new NodoLista(v,c);
+            nuevo->sig = l;
+            l = nuevo;    
+    }
+};
+
 class Asociacion
 {
 private:
@@ -19,7 +54,6 @@ public:
     bool operator>=(Asociacion comp) { return this->getClave() >= comp.getClave(); }
     bool operator==(Asociacion comp) { return this->getClave() == comp.getClave(); }
 };
-
 
 template <class T>
 class Heap
@@ -125,14 +159,14 @@ public:
     }
 };
 
-
 template <class V>
 class Grafo
 {
 private:
-    bool **matrizAdy; // matriz de adyacencia, si matrizAdy[i][j] == true entonces hay una arista i->j
-    int **matrizCosto;
-    V *vArrList;      // mapeo de indice interno a vertice
+//    bool **matrizAdy; // matriz de adyacencia, si matrizAdy[i][j] == true entonces hay una arista i->j
+//    int **matrizCosto;
+    NodoLista **listaAdy;
+    V *vArrList;        // mapeo de indice interno a vertice
     int max;            // max cantidad de vertices
     int ultimo;         // ultimo disponible (indice interno)
     int cantDeAristas;  // cantidad de aristas ingresadas
@@ -146,9 +180,13 @@ public:
         this->cantDeAristas = 0;
         this->cantDeVertices = 0;
         this->max = numeroDeVertices;
-        //this->heap = new Heap<Asociacion<int>>(max);
         this->vArrList = new V[numeroDeVertices];
-        this->matrizAdy = new bool *[numeroDeVertices];
+        this->listaAdy = new NodoLista*[max];
+        for (int i = 0; i<max; i++) {
+            listaAdy[i] = NULL;
+        }
+        //this->heap = new Heap<Asociacion<int>>(max);
+        /*  this->matrizAdy = new bool *[numeroDeVertices];
         this->matrizCosto = new int *[numeroDeVertices];
         //this->visitados = new bool[max];
         for (int i = 0; i < this->max; i++)
@@ -163,18 +201,19 @@ public:
                 matrizAdy[i][j] = false;
                 matrizCosto[i][j] = INF;
             }
-        }
+        }*/
     }
     ~Grafo()
     {
         delete[] vArrList;
-        for (int i = 0; i < this->max; i++)
+       /* for (int i = 0; i < this->max; i++)
         {
             delete[] matrizAdy[i];
             delete[] matrizCosto[i];
         }
         delete[] matrizAdy;
-        delete[] matrizCosto;
+        delete[] matrizCosto;*/
+        delete[] listaAdy;
     }
 
     int Pos(V vertice)
@@ -197,19 +236,20 @@ public:
     }
     void AniadirArista(V origen, V destino, int costo)
     {
-        matrizAdy[this->Pos(origen)][this->Pos(destino)] = true;
-        matrizCosto[this->Pos(origen)][this->Pos(destino)] = costo;
+       /* matrizAdy[this->Pos(origen)][this->Pos(destino)] = true;
+        matrizCosto[this->Pos(origen)][this->Pos(destino)] = costo;*/
+        listaAdy[this->Pos(origen)]->insertarOrdenado(listaAdy[this->Pos(origen)], Pos(destino), costo);
         cantDeAristas++;
     }
 
-    void EliminarArista(V origen, V destino)
+    /*void EliminarArista(V origen, V destino)
     {
         matrizAdy[this->Pos(origen)][this->Pos(destino)] = false;
         matrizCosto[this->Pos(origen)][this->Pos(destino)] = INF;
         cantDeAristas--;
-    }
+    }*/
 
-    int* dijkstra(int posO)
+    int *dijkstra(int posO)
     {
         // Creo vectores auxiliares
         int *dist = new int[max];
@@ -217,18 +257,19 @@ public:
         bool *vis = new bool[max];
 
         // Inicializo los vectores
-        for (int i = 0; i < max; dist[i] = INF, ant[i] = -1, vis[i] = false, i++);
+        for (int i = 0; i < max; dist[i] = INF, ant[i] = -1, vis[i] = false, i++)
+            ;
 
         // Proceso al origen
         vis[posO] = true;
         dist[posO] = 0;
-        for (int j = 0; j < max; j++)
+        NodoLista* aux = listaAdy[posO];
+        while (aux != NULL)
         {
-            if (matrizAdy[posO][j])
-            {
-                ant[j] = posO;
-                dist[j] = matrizCosto[posO][j];
-            }
+            int v = aux->getDestino() -1;
+            ant[v] = posO;
+            dist[v] = aux->getCosto();
+            aux = aux->getSig();
         }
 
         // Evalúo a todos los demás vértices
@@ -249,8 +290,21 @@ public:
             if (posMin == -1)
                 break;
             vis[posMin] = true;
+            aux = listaAdy[posMin];
+            while (aux != NULL)
+            {
+                int j = aux->getDestino() -1;
+                if (!vis[j]){
+                    int nuevoCosto = dist[posMin] + aux->getCosto();
+                    if (nuevoCosto < dist[j]){
+                        dist[j] = nuevoCosto;
+                        ant[j] = posMin;
+                    }
+                }
+                aux = aux->getSig();
+            }
             // Evaluo adyacentes
-            for (int j = 0; j < max; j++)
+            /*for (int j = 0; j < max; j++)
             {
                 // Actualizo la distancia y el anterior en caso que un adyacente tenga distancia acumulada mejor a la actual
                 if (!vis[j] && matrizAdy[posMin][j])
@@ -262,7 +316,7 @@ public:
                         ant[j] = posMin;
                     }
                 }
-            }
+            }*/
         }
 
         delete[] ant;
@@ -270,17 +324,20 @@ public:
         return dist;
     }
 
-     void imprmirVector(int* vector, int pos){
-         for(int i=0; i<this->cantDeVertices; i++){
-             if(i+1==pos || vector[i]==INF){
-                 cout << -1 << endl;
-             }
-             else{
+    void imprmirVector(int *vector, int pos)
+    {
+        for (int i = 0; i < this->cantDeVertices; i++)
+        {
+            if (i + 1 == pos || vector[i] == INF)
+            {
+                cout << -1 << endl;
+            }
+            else
+            {
                 cout << vector[i] << endl;
-             }
-         }
-     }
-
+            }
+        }
+    }
 };
 
 int main()
@@ -289,13 +346,13 @@ int main()
     int cantAristas;
     int cantPedidos;
     cin >> cantVertices;
-    Grafo<int>* grafo = new Grafo<int>(cantVertices);
+    Grafo<int> *grafo = new Grafo<int>(cantVertices);
     for (int j = 0; j < cantVertices; j++)
     {
-        grafo->AniadirVertice(j+1);
+        grafo->AniadirVertice(j + 1);
     }
     cin >> cantAristas;
-    
+
     for (int i = 0; i < cantAristas; i++)
     {
         int origen;
@@ -306,23 +363,20 @@ int main()
         cin >> costo;
         grafo->AniadirArista(origen, destino, costo);
     }
-    
     cin >> cantPedidos;
-    Heap<Asociacion>* cola = new Heap<Asociacion>(cantPedidos); 
-    for(int i=0; i<cantPedidos; i++){
+    Heap<Asociacion> *cola = new Heap<Asociacion>(cantPedidos);
+    for (int i = 0; i < cantPedidos; i++)
+    {
         int insertar;
         cin >> insertar;
-        Asociacion nuevo(i+1, insertar); 
+        Asociacion nuevo(i + 1, insertar);
         cola->insertar(nuevo);
     }
 
-    
-    for(int i=0; i<cantPedidos; i++){
+    for (int i = 0; i < cantPedidos; i++)
+    {
         int pos = cola->pop().getIndex();
-        grafo->imprmirVector(grafo->dijkstra(pos-1), pos);
+        grafo->imprmirVector(grafo->dijkstra(pos - 1), pos);
     }
-    
-
-    
     return 0;
 }
