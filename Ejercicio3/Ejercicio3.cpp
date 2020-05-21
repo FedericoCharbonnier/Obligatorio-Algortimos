@@ -163,7 +163,7 @@ int main()
 
     while (!cola->esVacio())
     {
-        Asociacion aux = cola->pop(vectores);
+        Asociacion aux = cola->pop();
         int array = aux.getArray();
         int index = aux.getIndex();
         if (index == vecLength[array] - 1) //Estoy al final de una lista
