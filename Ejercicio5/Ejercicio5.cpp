@@ -238,7 +238,7 @@ public:
     {
        /* matrizAdy[this->Pos(origen)][this->Pos(destino)] = true;
         matrizCosto[this->Pos(origen)][this->Pos(destino)] = costo;*/
-        listaAdy[this->Pos(origen)]->insertarOrdenado(listaAdy[this->Pos(origen)], Pos(destino), costo);
+        listaAdy[origen-1]->insertarOrdenado(listaAdy[origen-1], destino, costo);
         cantDeAristas++;
     }
 
@@ -338,6 +338,18 @@ public:
             }
         }
     }
+
+    void displayHash() { 
+    for (int i = 0; i < max; i++) { 
+      cout << i+1; 
+      NodoLista* aux = listaAdy[i];
+      while (aux!=NULL) {
+        cout << " --> " << aux->getDestino() << "-" << aux->getCosto(); 
+        aux= aux->getSig();
+      }
+      cout << endl; 
+    }
+  } 
 };
 
 int main()
