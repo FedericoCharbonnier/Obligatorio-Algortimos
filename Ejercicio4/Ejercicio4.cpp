@@ -2,6 +2,25 @@
 #include <assert.h>
 using namespace std;
 
+class NodoLista
+{
+private:
+    int destino;
+    NodoLista *sig;
+
+public:
+    NodoLista() {}
+    NodoLista(int d) : destino(d), sig(NULL) {}
+    int getDestino() { return this->destino; };
+    NodoLista *getSig() { return this->sig; };
+    void insertarOrdenado(NodoLista *&l, int v)
+    {
+        NodoLista *nuevo = new NodoLista(v);
+        nuevo->sig = l;
+        l = nuevo;
+    }
+};
+
 template <class T>
 class Heap
 {
@@ -167,192 +186,121 @@ public:
     bool operator==(Asociacion comp) { return (this->getClave() == comp.getClave()) && (this->getDato() == comp.getDato()); }
 };
 
-/*template <class V>
-struct Lista
-{
-public:
-    V dato;
-    Lista<V> *sig;
-
-    void Insertar(V valor, Lista<V> *&lista)
-    {
-        if (!lista)
-        {
-            lista = new Lista<V>();
-            lista->dato = valor;
-            lista->sig = NULL;
-        }
-        else
-        {
-            Lista<V> *aux = lista;
-            while (aux)
-            {
-                aux = aux->sig;
-            }
-            aux = new Lista<V>();
-            aux->dato = valor;
-            aux->sig = NULL;
-        }
-    }
-};*/
-
-template <class V>
 class Grafo
 {
 private:
-    bool **matrizAdy; // matriz de adyacencia, si matrizAdy[i][j] == true entonces hay una arista i->j
-    V *vArrList;      // mapeo de indice interno a vertice
-    int *nivel;
+    NodoLista **listaAdy;
+    int* vArrList; // mapeo de indice interno a vertice
+    int* nivel;
+    int* vec;           //vector de incidencias
     int max;            // max cantidad de vertices
     int ultimo;         // ultimo disponible (indice interno)
     int cantDeAristas;  // cantidad de aristas ingresadas
     int cantDeVertices; // cantidad de vertices ingresados
-    //bool *visitados;
-    Heap<Asociacion<int>> *heap;
 
 public:
+    NodoLista** getListaAdy() { return this->listaAdy; };
+    int* getVArrList() { return this->vArrList; };
+    int* getNivel() { return this->nivel; };
+    int* getVec() { return this->vec; };
+    int getMax() { return this->max; };
+    
     Grafo(int numeroDeVertices)
     {
         this->ultimo = 0;
         this->cantDeAristas = 0;
         this->cantDeVertices = 0;
         this->max = numeroDeVertices;
-        this->heap = new Heap<Asociacion<int>>(max);
-        this->vArrList = new V[numeroDeVertices];
-        this->matrizAdy = new bool *[numeroDeVertices];
-        //this->visitados = new bool[max];
-        for (int i = 0; i < this->max; i++)
+        this->vArrList = new int[numeroDeVertices];
+        this->listaAdy = new NodoLista *[max];
+        for (int i = 0; i < max; i++)
         {
-            matrizAdy[i] = new bool[numeroDeVertices];
-        }
-        for (int i = 0; i < this->max; i++)
-        {
-            for (int j = 0; j < this->max; j++)
-            {
-                matrizAdy[i][j] = false;
-            }
+            listaAdy[i] = NULL;
         }
         this->nivel = new int[max];
         for (int i = 0; i < this->max; i++)
         {
             nivel[i] = 0;
         }
+        this->vec = new int[max];
+        for (int k = 0; k < this->max; k++)
+        {
+            vec[k] = 0;
+        }
     }
     ~Grafo()
     {
         delete[] vArrList;
-        for (int i = 0; i < this->max; i++)
-        {
-            delete[] matrizAdy[i];
-        }
-        delete[] matrizAdy;
+        delete[] vec;
+        delete[] listaAdy;
+        delete[] nivel;
     }
 
-    int Pos(V vertice)
-    {
-        for (int i = 0; i < this->cantDeVertices; i++)
-        {
-            if (this->vArrList[i] == vertice)
-            {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    void AniadirVertice(V newV)
+    void AniadirVertice(int newV)
     {
         assert(this->ultimo < this->max);
         vArrList[ultimo] = newV;
         ultimo++;
         cantDeVertices++;
     }
-    void AniadirArista(V origen, V destino)
+    
+    void AniadirArista(int origen, int destino)
     {
-        matrizAdy[this->Pos(origen)][this->Pos(destino)] = true;
+        listaAdy[origen - 1]->insertarOrdenado(listaAdy[origen - 1], destino); 
+        vec[destino-1]++;
         cantDeAristas++;
     }
-
-    void EliminarArista(V origen, V destino)
-    {
-        matrizAdy[this->Pos(origen)][this->Pos(destino)] = false;
-        cantDeAristas--;
-    }
-
-    // Retorna una lista de V desde las que se puede llegar desde el vertice origen (parametro)
-    /*Lista<V> Anteriores(V &origen){
-        Lista<V> *ret = new Lista<V>();
-        ret = NULL;
-        for (int i = 0; i< this->cantDeVertices; i++){
-            if(this->matrizAdy[i][this->Pos(origen)]){
-                ret->Insertar(this->vArrList[i], ret);
-            }
-        }
-                return ret;
-    }*/
-
-    int *obtenerCantIncidentes()
-    {
-        int *vec = new int[max];
-        for (int j = 0; j < max; j++)
-        {
-            int cont = 0;
-            for (int i = 0; i < max; i++)
-            {
-                if (this->matrizAdy[i][j])
-                {
-                    cont++;
-                }
-            }
-            vec[j] = cont;
-        }
-        return vec;
-    }
-
-    int obtenerPosSinIncidentes(int *cantIncidentes)
-    {
-        for (int i = 0; i < this->max; i++)
-            if (cantIncidentes[i] == 0)
-                return i;
-        return -1;
-    }
-
-    void ImprimirOrdenTopologico()
-    {
-        int *cantIncidentes = obtenerCantIncidentes();
-        for (int i = 0; i < max; i++)
-        {
-            int posSinIncidentes = obtenerPosSinIncidentes(cantIncidentes);
-            cantIncidentes[posSinIncidentes] = -1;
-            for (int j = 0; j < max; j++)
-            {
-                if (matrizAdy[posSinIncidentes][j])
-                {
-                    cantIncidentes[j]--;
-                    int aux = nivel[posSinIncidentes] + 1;
-                    if (nivel[j] < aux)
-                      nivel[j] = aux;
-                }
-            }
-            Asociacion<int> nuevo(nivel[posSinIncidentes], vArrList[posSinIncidentes]);
-            this->heap->insertar(nuevo);
-        }
-        for (int k = 0; k < this->max; k++)
-        {
-            cout << this->heap->pop().getDato() << endl;
-        }
-    }
 };
+
+    bool *obtenerPosSinIncidentes(int *cantIncidentes, int largo){
+        bool *ret = new bool[largo];
+        for (int i = 0; i < largo; i++){
+            if (cantIncidentes[i] == 0)
+                ret[i] = true;
+        }
+        return ret;
+    }
+
+    void ImprimirOrdenTopologico(Grafo* &grafo, int largo){
+        Heap<Asociacion<int>> *heap = new Heap<Asociacion<int>>(largo);
+        bool* posSinIncidentes = obtenerPosSinIncidentes(grafo->getVec(), largo);
+        for (int i=0; i<largo; i++) {
+            if (posSinIncidentes[i]){
+                Asociacion<int> nuevo(grafo->getNivel()[i], grafo->getVArrList()[i]);
+                heap->insertar(nuevo);
+            }
+        }
+        while (!heap->esVacio()){
+            
+            int procesar = heap->pop().getDato();
+            cout << procesar << endl;
+            NodoLista *aux = grafo->getListaAdy()[procesar-1];
+            while (aux != NULL){
+                int dest = aux->getDestino() - 1;
+                grafo->getVec()[dest]--;
+                int ayuda = grafo->getNivel()[procesar-1] + 1;
+                if (grafo->getNivel()[dest] < ayuda)
+                    grafo->getNivel()[dest] = ayuda;
+                if (grafo->getVec()[dest] == 0){
+                    Asociacion<int> nuevo(grafo->getNivel()[dest], grafo->getVArrList()[dest]);
+                    heap->insertar(nuevo);
+                }
+                aux = aux->getSig();
+            }
+        }
+    }
+
+     
 
 int main()
 {
     int cantVertices;
     int cantAristas;
     cin >> cantVertices;
-    Grafo<int> *grafo = new Grafo<int>(cantVertices);
+    Grafo *grafo = new Grafo(cantVertices);
     for (int j = 0; j < cantVertices; j++)
     {
-        grafo->AniadirVertice(j+1);
+        grafo->AniadirVertice(j + 1);
     }
     cin >> cantAristas;
     for (int i = 0; i < cantAristas; i++)
@@ -363,6 +311,6 @@ int main()
         cin >> destino;
         grafo->AniadirArista(origen, destino);
     }
-    grafo->ImprimirOrdenTopologico();
+    ImprimirOrdenTopologico(grafo,cantVertices);
     return 0;
 }
