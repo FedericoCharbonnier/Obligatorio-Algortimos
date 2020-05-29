@@ -75,8 +75,8 @@ public:
     ~Heap() { delete[] array; }
     bool esVacio() { return ultimoLibre == 0; }
     bool esLleno() { return ultimoLibre == capacidad; }
-    int getUltimoLibre() {return ultimoLibre; }
-    void setUltimoLibre(int valor) {this->ultimoLibre = valor; }
+    int getUltimoLibre() { return ultimoLibre; }
+    void setUltimoLibre(int valor) { this->ultimoLibre = valor; }
     // pre: no esta lleno
     void insertar(T elemento)
     {
@@ -91,43 +91,40 @@ public:
     // retorna el menor elemento y lo saca del heap
     T pop()
     {
-        T aux = array[ultimoLibre];
+        /*T aux = array[ultimoLibre];
         array[ultimoLibre] = array[ultimoLibre - 1];
         ultimoLibre--;
         if (ultimoLibre != 0)
             hundir(0);
+        return aux;*/
+
+        T aux = array[0];
+        array[0] = array[ultimoLibre-1];
+        ultimoLibre--;
+        if (ultimoLibre!=0)
+            hundir(0);
         return aux;
-        /*int array = aux->getArray();
-            int index = aux->getIndex();
-            if (index == vecLength(vec[array])-1){
-                T nuevo(INT_MAX, array, index+1);
-                array[0] = this->insertar(nuevo);
-                ultimoLibre--;
-            } else {
-                T nuevo(vec[array][index], array, index+1);
-                array[0] = this->insertar(nuevo);
-            }*/
     }
     // pre: no esta vacio
     // retorna el mayor elemento y NO lo saca del heap
     T top()
     {
         assert(!esVacio());
-        return array[ultimoLibre];
+        return array[0];
     }
 };
 
 class Asociacion
 {
 private:
-    int origen; //elemento
+    int origen;  //elemento
     int destino; // numero de array
-    int costo; //indice dentro del array
+    int costo;   //indice dentro del array
 public:
     Asociacion() {}
     Asociacion(int unOrigen, int unDestino, int unCosto) : origen(unOrigen), destino(unDestino), costo(unCosto) {}
     int getCosto() { return this->costo; };
-    int getOrgien() { return this->origen; };
+    int getOrigen() { return this->origen; };
     int getDestino() { return this->destino; };
     bool operator<(Asociacion comp) { return this->getCosto() < comp.getCosto(); }
     bool operator<=(Asociacion comp) { return this->getCosto() <= comp.getCosto(); }
@@ -136,28 +133,26 @@ public:
     bool operator==(Asociacion comp) { return this->getCosto() == comp.getCosto(); }
 };
 
-
-
 class NodoLista
 {
 private:
     int destino;
     int costo;
-    NodoLista* sig;
+    NodoLista *sig;
+
 public:
-    
     NodoLista() {}
     NodoLista(int d, int c) : destino(d), costo(c), sig(NULL) {}
     int getDestino() { return this->destino; };
     int getCosto() { return this->costo; };
-    NodoLista* getSig() {return this->sig;};
-    void insertarOrdenado(NodoLista* &l, int v , int c){
-            NodoLista* nuevo = new NodoLista(v,c);
-            nuevo->sig = l;
-            l = nuevo;    
+    NodoLista *getSig() { return this->sig; };
+    void insertarOrdenado(NodoLista *&l, int v, int c)
+    {
+        NodoLista *nuevo = new NodoLista(v, c);
+        nuevo->sig = l;
+        l = nuevo;
     }
 };
-
 
 template <class V>
 class Grafo
@@ -170,7 +165,6 @@ public:
     int cantDeAristas;  // cantidad de aristas ingresadas
     int cantDeVertices; // cantidad de vertices ingresados
 
-
     Grafo(int numeroDeVertices)
     {
         this->ultimo = 0;
@@ -178,8 +172,9 @@ public:
         this->cantDeVertices = 0;
         this->max = numeroDeVertices;
         this->vArrList = new V[numeroDeVertices];
-        this->listaAdy = new NodoLista*[max];
-        for (int i = 0; i<max; i++) {
+        this->listaAdy = new NodoLista *[max];
+        for (int i = 0; i < max; i++)
+        {
             listaAdy[i] = NULL;
         }
     }
@@ -187,22 +182,11 @@ public:
     ~Grafo()
     {
         delete[] vArrList;
-        for(int i=0; i<cantDeVertices; i++){
+        for (int i = 0; i < cantDeVertices; i++)
+        {
             delete[] listaAdy[i];
         }
         delete[] listaAdy;
-    }
-
-    int Pos(V vertice)
-    {
-        for (int i = 0; i < this->cantDeVertices; i++)
-        {
-            if (this->vArrList[i] == vertice)
-            {
-                return i;
-            }
-        }
-        return -1;
     }
 
     void AniadirVertice(V newV)
@@ -214,45 +198,44 @@ public:
 
     void AniadirArista(V origen, V destino, int costo) //Para grafos no dirigidos
     {
-        listaAdy[origen-1]->insertarOrdenado(listaAdy[origen-1], destino, costo);
-        listaAdy[destino-1]->insertarOrdenado(listaAdy[destino-1], origen, costo);
+        listaAdy[origen - 1]->insertarOrdenado(listaAdy[origen - 1], destino, costo);
+        listaAdy[destino - 1]->insertarOrdenado(listaAdy[destino - 1], origen, costo);
         cantDeAristas++;
     }
 
-
-    void prim(){
+    void prim()
+    {
         int costo = 0;
-        int i = 1; //el nodo donde estoy parada actualemente
         Heap<Asociacion> *cola = new Heap<Asociacion>(cantDeAristas);
-        int contador = 1;
-        bool* visitados = new bool[cantDeVertices+1];
-        for(int j=0; j<=cantDeVertices; j++){
+        bool* visitados = new bool[cantDeVertices];
+        for (int j = 0; j < cantDeVertices; j++){
             visitados[j] = false;
         }
-        //visitados[1] = true;
-        while(contador<=cantDeVertices){
-            if(!visitados[i]){
-                visitados[i] = true;
-                NodoLista* aux = listaAdy[i];
-
-                while(aux){
-                    Asociacion nuevo(i, aux->getDestino(), aux->getCosto());
-                    cola->insertar(nuevo);
-                    cout << cola->getUltimoLibre() << endl;
+        visitados[0] = true;
+        NodoLista *aux = listaAdy[0];
+        while (aux != NULL){
+            Asociacion nuevo(0, aux->getDestino(), aux->getCosto());
+            cola->insertar(nuevo);
+            aux = aux->getSig();
+        }
+        while (!cola->esVacio()){
+            Asociacion min = cola->pop();
+            int posDest = min.getDestino()-1;
+            if (!visitados[posDest]){
+                visitados[posDest] = true;
+                costo += min.getCosto();
+                NodoLista *aux = listaAdy[posDest];
+                while (aux != NULL){
+                    if (!visitados[aux->getDestino() - 1]){
+                        Asociacion nuevo(posDest, aux->getDestino(), aux->getCosto());
+                        cola->insertar(nuevo);
+                    }
                     aux = aux->getSig();
                 }
-
-                Asociacion min = cola->pop();
-                costo += min.getCosto();
-                i = aux->getDestino();
-                visitados[i] = true;
-                
             }
-            contador++;
         }
         cout << costo;
     }
-
 };
 
 int main()
@@ -267,7 +250,6 @@ int main()
         grafo->AniadirVertice(j + 1);
     }
     cin >> cantAristas;
-
     for (int i = 0; i < cantAristas; i++)
     {
         int origen;
@@ -278,7 +260,6 @@ int main()
         cin >> costo;
         grafo->AniadirArista(origen, destino, costo);
     }
-
     grafo->prim();
     return 0;
 }
