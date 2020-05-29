@@ -3,19 +3,174 @@
 using namespace std;
 #define INF 99999
 
+template <class T>
+class Heap
+{
+    // Nota: MIN Heap
+private:
+    // array para guardar los elementos
+    T *array;
+    // guarda la ultima posicion libre
+    int ultimoLibre;
+    // guarda la maxima capacidad de elementos que puede guardar el heap
+    int capacidad;
+
+    // pre: no llamar en root
+    // retorna la posicion del padre del elemento que se encuentra en i
+    int padre(int i) { return (i - 1) / 2; }
+    // retorna el indice del hijo izq
+    int izq(int i) { return (2 * i + 1); }
+    // retorna el indice del hijo der
+    int der(int i) { return (2 * i + 2); }
+
+    void hundir(int i)
+    {
+        if (izq(i) < ultimoLibre)
+        {
+            if (der(i) < ultimoLibre)
+            {
+                if (array[izq(i)] > array[der(i)])
+                {
+                    if (array[i] > array[der(i)])
+                    {
+                        cambiarPos(i, der(i));
+                        hundir(der(i));
+                    }
+                }
+            }
+            if (array[i] > array[izq(i)])
+            {
+                cambiarPos(i, izq(i));
+                hundir(izq(i));
+            }
+        }
+    }
+
+    void flotar(int i)
+    {
+        if (i != 0)
+        {
+            if (array[i] < array[padre(i)])
+            {
+                cambiarPos(i, padre(i));
+                flotar(padre(i));
+            }
+        }
+    }
+
+    void cambiarPos(int i, int j)
+    {
+        T aux = array[j];
+        array[j] = array[i];
+        array[i] = aux;
+    }
+
+public:
+    Heap(int capacidad)
+    {
+        array = new T[capacidad];
+        ultimoLibre = 0;
+        this->capacidad = capacidad;
+    }
+    ~Heap() { delete[] array; }
+    bool esVacio() { return ultimoLibre == 0; }
+    bool esLleno() { return ultimoLibre == capacidad; }
+    int getUltimoLibre() {return ultimoLibre; }
+    void setUltimoLibre(int valor) {this->ultimoLibre = valor; }
+    // pre: no esta lleno
+    void insertar(T elemento)
+    {
+        assert(!esLleno());
+        // TODO_1.1
+        // wiki: https://es.wikipedia.org/wiki/Mont%C3%ADculo_binario#Inserci%C3%B3n_de_un_elemento (OJO que este es para MAX heap)
+        array[ultimoLibre] = elemento;
+        ultimoLibre++;
+        flotar(ultimoLibre - 1);
+    }
+    // pre: no esta vacio
+    // retorna el menor elemento y lo saca del heap
+    T pop()
+    {
+        T aux = array[ultimoLibre];
+        array[ultimoLibre] = array[ultimoLibre - 1];
+        ultimoLibre--;
+        if (ultimoLibre != 0)
+            hundir(0);
+        return aux;
+        /*int array = aux->getArray();
+            int index = aux->getIndex();
+            if (index == vecLength(vec[array])-1){
+                T nuevo(INT_MAX, array, index+1);
+                array[0] = this->insertar(nuevo);
+                ultimoLibre--;
+            } else {
+                T nuevo(vec[array][index], array, index+1);
+                array[0] = this->insertar(nuevo);
+            }*/
+    }
+    // pre: no esta vacio
+    // retorna el mayor elemento y NO lo saca del heap
+    T top()
+    {
+        assert(!esVacio());
+        return array[ultimoLibre];
+    }
+};
+
+class Asociacion
+{
+private:
+    int origen; //elemento
+    int destino; // numero de array
+    int costo; //indice dentro del array
+public:
+    Asociacion() {}
+    Asociacion(int unOrigen, int unDestino, int unCosto) : origen(unOrigen), destino(unDestino), costo(unCosto) {}
+    int getCosto() { return this->costo; };
+    int getOrgien() { return this->origen; };
+    int getDestino() { return this->destino; };
+    bool operator<(Asociacion comp) { return this->getCosto() < comp.getCosto(); }
+    bool operator<=(Asociacion comp) { return this->getCosto() <= comp.getCosto(); }
+    bool operator>(Asociacion comp) { return this->getCosto() > comp.getCosto(); }
+    bool operator>=(Asociacion comp) { return this->getCosto() >= comp.getCosto(); }
+    bool operator==(Asociacion comp) { return this->getCosto() == comp.getCosto(); }
+};
+
+
+
+class NodoLista
+{
+private:
+    int destino;
+    int costo;
+    NodoLista* sig;
+public:
+    
+    NodoLista() {}
+    NodoLista(int d, int c) : destino(d), costo(c), sig(NULL) {}
+    int getDestino() { return this->destino; };
+    int getCosto() { return this->costo; };
+    NodoLista* getSig() {return this->sig;};
+    void insertarOrdenado(NodoLista* &l, int v , int c){
+            NodoLista* nuevo = new NodoLista(v,c);
+            nuevo->sig = l;
+            l = nuevo;    
+    }
+};
+
+
 template <class V>
 class Grafo
 {
-private:
-    bool **matrizAdy; // matriz de adyacencia, si matrizAdy[i][j] == true entonces hay una arista i->j
-    int **matrizCosto;
+public:
+    NodoLista **listaAdy;
     V *vArrList;        // mapeo de indice interno a vertice
     int max;            // max cantidad de vertices
     int ultimo;         // ultimo disponible (indice interno)
     int cantDeAristas;  // cantidad de aristas ingresadas
     int cantDeVertices; // cantidad de vertices ingresados
 
-public:
+
     Grafo(int numeroDeVertices)
     {
         this->ultimo = 0;
@@ -23,32 +178,19 @@ public:
         this->cantDeVertices = 0;
         this->max = numeroDeVertices;
         this->vArrList = new V[numeroDeVertices];
-        this->matrizAdy = new bool *[numeroDeVertices];
-        this->matrizCosto = new int *[numeroDeVertices];
-        for (int i = 0; i < this->max; i++)
-        {
-            matrizAdy[i] = new bool[numeroDeVertices];
-            matrizCosto[i] = new int[numeroDeVertices];
-        }
-        for (int i = 0; i < this->max; i++)
-        {
-            for (int j = 0; j < this->max; j++)
-            {
-                matrizAdy[i][j] = false;
-                matrizCosto[i][j] = INF;
-            }
+        this->listaAdy = new NodoLista*[max];
+        for (int i = 0; i<max; i++) {
+            listaAdy[i] = NULL;
         }
     }
+
     ~Grafo()
     {
         delete[] vArrList;
-        for (int i = 0; i < this->max; i++)
-        {
-            delete[] matrizAdy[i];
-            delete[] matrizCosto[i];
+        for(int i=0; i<cantDeVertices; i++){
+            delete[] listaAdy[i];
         }
-        delete[] matrizAdy;
-        delete[] matrizCosto;
+        delete[] listaAdy;
     }
 
     int Pos(V vertice)
@@ -72,89 +214,45 @@ public:
 
     void AniadirArista(V origen, V destino, int costo) //Para grafos no dirigidos
     {
-        matrizAdy[this->Pos(origen)][this->Pos(destino)] = true;
-        matrizCosto[this->Pos(origen)][this->Pos(destino)] = costo;
-        matrizAdy[this->Pos(destino)][this->Pos(origen)] = true;
-        matrizCosto[this->Pos(destino)][this->Pos(origen)] = costo;
+        listaAdy[origen-1]->insertarOrdenado(listaAdy[origen-1], destino, costo);
+        listaAdy[destino-1]->insertarOrdenado(listaAdy[destino-1], origen, costo);
         cantDeAristas++;
     }
 
-    void EliminarArista(V origen, V destino)
-    {
-        matrizAdy[this->Pos(origen)][this->Pos(destino)] = false;
-        matrizCosto[this->Pos(origen)][this->Pos(destino)] = INF;
-        cantDeAristas--;
-    }
 
     void prim(){
         int costo = 0;
-        int veces;
-        bool *vis = new bool[max];
-        for (int i = 0; i < max; i++)
-        {
-            vis[i] = false;
+        int i = 1; //el nodo donde estoy parada actualemente
+        Heap<Asociacion> *cola = new Heap<Asociacion>(cantDeAristas);
+        int contador = 1;
+        bool* visitados = new bool[cantDeVertices+1];
+        for(int j=0; j<=cantDeVertices; j++){
+            visitados[j] = false;
         }
-        veces = 0;
-        vis[0] = true;
-        int posI;
-        int posJ;
-        while (veces < max - 1){
-            int min = INF;
-            posI = -1;
-            posJ = -1;
-            for (int i = 0; i < max; i++){
-                if (vis[i]){
-                    for (int j = 0; j < max; j++){
-                        if (!vis[j] && matrizAdy[i][j] && min > matrizCosto[i][j]){
-                            min = matrizCosto[i][j];
-                            posI = i;
-                            posJ = j;
-                        }
-                    }
+        //visitados[1] = true;
+        while(contador<=cantDeVertices){
+            if(!visitados[i]){
+                visitados[i] = true;
+                NodoLista* aux = listaAdy[i];
+
+                while(aux){
+                    Asociacion nuevo(i, aux->getDestino(), aux->getCosto());
+                    cola->insertar(nuevo);
+                    cout << cola->getUltimoLibre() << endl;
+                    aux = aux->getSig();
                 }
+
+                Asociacion min = cola->pop();
+                costo += min.getCosto();
+                i = aux->getDestino();
+                visitados[i] = true;
+                
             }
-            costo += matrizCosto[posI][posJ];
-            vis[posJ] = true;
-            veces++;
+            contador++;
         }
         cout << costo;
     }
 
-
-    void primOtro(int posO){
-        int costo =0;
-        bool *vis = new bool[max];
-        vis[posO] = true;
-        // Hago V-1 veces el recorrido
-        int min, posI, posJ;
-
-        for (int k = 0; k < max; k++){
-            min = INF;
-            posI = -1;
-            posJ = -1;
-            // Recorro los visitados
-            for (int i = 0; i < max; i++){
-                if (vis[i]){
-                    // Recorro los no visitados
-                    for (int j = 0; j < max; j++){
-                        if (!vis[j] && matrizAdy[i][j] && matrizCosto[i][j] < min){
-                            min = matrizCosto[i][j];
-                            posI = i;
-                            posJ = j;
-                        }
-                    }
-                    if (min == INF){
-                        cout << costo;
-                        return;
-                    }
-                    vis[posJ] = true;
-                    costo += min;
-                }
-            }
-        }
-
-        delete[] vis;
-    }
 };
 
 int main()
@@ -182,6 +280,5 @@ int main()
     }
 
     grafo->prim();
-    //grafo->prim(0);
     return 0;
 }

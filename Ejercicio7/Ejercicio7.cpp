@@ -195,9 +195,11 @@ public:
         ultimo++;
         cantDeVertices++;
     }
-    void AniadirArista(V origen, V destino)
+    void AniadirArista(V origen, V destino) //Para grafo no dirigido
     {
         matrizAdy[origen-1][destino-1] = true;
+        matrizAdy[destino-1][origen-1] = true;
+        cantDeAristas++;
         cantDeAristas++;
     }
 
@@ -224,6 +226,7 @@ public:
                 }
             }
         }
+
         // inicializar la estructura de las componentes conexas, creando un vector para cada uno, conteniendo un sólo número.
         bool **compConexas = new bool*[cantDeVertices]();
         for (int i = 0; i < cantDeVertices; i++)
@@ -242,28 +245,29 @@ public:
             }
         }
 
-        int cantAristas = 0, posOri, posDes;
-        
-        while (cantAristas < max - 1 && !cp->esVacio())
+        int cantAristas = 0;
+        int columnaDestino = 0;
+        bool encontre = false;
+        while (!cp->esVacio())
         {
             Asociacion a = cp->pop();
-            posOri = -1;
-            posDes = -1;
-            int columnaDestino = 0;
+            
             for (int i = 0; i < cantDeVertices; i++){ //Encuentro la columna del vertice Destino
-                if (compConexas[i][a.getDestino()])
+                if (compConexas[a.getDestino()][i])
                 {
+                    encontre = true;
                     columnaDestino = i;
                 }
             }
-
+            if(encontre){
             for (int j = 0; j < cantDeVertices; j++)
             {
-                if (compConexas[columnaDestino][j])
+                if (compConexas[j][columnaDestino])
                 {
-                    compConexas[columnaDestino][j] = false;
-                    compConexas[a.getOrigen()][j] = true;
+                    compConexas[j][columnaDestino] = false;
+                    compConexas[j][a.getOrigen()] = true;
                 }
+            }
             }
             cantAristas++;
 
@@ -275,19 +279,7 @@ public:
                     cantTrue++;
                 }
             }
-        //cout << cantTrue;
-        for (int i = 0; i < cantDeVertices; i++){
-            for (int j = 0; j < cantDeVertices; j++){
-                if(compConexas[i][j]){
-                    cout << "T ";
-                }
-                else{
-                    cout << "F ";
-                }
-            
-            }
-            cout << endl;
-        }   
+        cout << cantTrue;
      }
 };
 
